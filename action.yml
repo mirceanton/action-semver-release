@@ -14,11 +14,11 @@ inputs:
   version-increment:
     description: "Version increment strategy (major, minor, patch, prerelease or auto)"
     required: false
-    default: 'auto'
+    default: "auto"
   release-prefix:
     description: 'Prefix to add to the release tag (e.g., "v")'
     required: false
-    default: 'v'
+    default: "v"
 
 runs:
   using: "composite"
@@ -26,7 +26,7 @@ runs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: 'stable'
+        go-version: "stable"
 
     - name: Install SVU
       shell: bash
@@ -41,10 +41,10 @@ runs:
         else
           SVU_COMMAND="${{ inputs.version-increment }}"
         fi
-        
+
         # Get next version using SVU
         NEXT_VERSION=$(svu $SVU_COMMAND)
-        
+
         # Add prefix if specified
         RELEASE_TAG="${{ inputs.release-prefix }}${NEXT_VERSION}"
         echo "Next version: $NEXT_VERSION (tag: $RELEASE_TAG)"
@@ -56,14 +56,14 @@ runs:
       run: |
         # Get previous tag or empty if none exists
         PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-        
+
         # Generate notes from commit log
         if [ -z "$PREV_TAG" ]; then
           NOTES=$(git log --pretty=format:"* %s (%h)" --no-merges)
         else
           NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)
         fi
-        
+
         # Save release notes to environment variable
         echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
         echo "$NOTES" >> $GITHUB_ENV
