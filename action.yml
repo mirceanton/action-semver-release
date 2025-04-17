@@ -15,10 +15,6 @@ inputs:
     description: "Version increment strategy (major, minor, patch, prerelease or auto)"
     required: false
     default: "auto"
-  release-prefix:
-    description: 'Prefix to add to the release tag (e.g., "v")'
-    required: false
-    default: "v"
 
 runs:
   using: "composite"
@@ -46,7 +42,7 @@ runs:
         NEXT_VERSION=$(svu $SVU_COMMAND)
 
         # Add prefix if specified
-        RELEASE_TAG="${{ inputs.release-prefix }}${NEXT_VERSION}"
+        RELEASE_TAG="${NEXT_VERSION}"
         echo "Next version: $NEXT_VERSION (tag: $RELEASE_TAG)"
         echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
         echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
