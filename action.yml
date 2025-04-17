@@ -69,14 +69,6 @@ runs:
         echo "$NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
-    - name: Display release info (Dry Run)
-      if: inputs.dry-run == 'true'
-      shell: bash
-      run: |
-        echo "DRY RUN: Would create release ${{ env.RELEASE_TAG }}"
-        echo "Release notes would be:"
-        echo "${{ env.RELEASE_NOTES }}"
-
     - name: Create GitHub Release
       if: inputs.dry-run != 'true'
       shell: bash
