@@ -6,18 +6,18 @@ on:
   workflow_dispatch:
     inputs:
       version-increment:
-        description: "Version increment strategy"
+        description: "Version Increment Strategy"
         required: false
         default: 'auto'
         type: choice
         options: [ "auto", "major", "minor", "patch", "prerelease" ]
       dry-run:
-        description: "Perform a dry run without creating an actual release"
+        description: Dry Run
         default: false
         required: false
         type: boolean
       draft:
-        description: "Mark the release as a draft (unpublished)"
+        description: Mark Release as Draft
         default: false
         required: false
         type: boolean
