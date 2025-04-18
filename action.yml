@@ -71,7 +71,7 @@ runs:
       shell: bash
       id: generate-notes
       run: |
-        set -e
+        set -xe
         # Get previous tag or empty if none exists
         PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
