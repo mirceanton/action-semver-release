@@ -153,7 +153,7 @@ runs:
         echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_ENV
         CHORE_COUNT=$(count_commits "^* chore")
         echo "CHORE_COUNT=$CHORE_COUNT" >> $GITHUB_ENV
-        CI_COUNT=$(count_commits "^* ci"
+        CI_COUNT=$(count_commits "^* ci")
         echo "CI_COUNT=$CI_COUNT" >> $GITHUB_ENV
 
         CONVENTIONAL_COUNT=$((BREAKING_COUNT + FEAT_COUNT + FIX_COUNT + DOCS_COUNT + REFACTOR_COUNT + TEST_COUNT + CHORE_COUNT + CI_COUNT))
