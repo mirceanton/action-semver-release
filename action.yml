@@ -80,7 +80,7 @@ runs:
           # if a tag exists, only use commits since that tag
           NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)
           COMMIT_COUNT=$(git rev-list --count ${PREV_TAG}..HEAD)
-          COMMIT_RANGE="\`${PREV_TAG}\` to HEAD"
+          COMMIT_RANGE="\`${PREV_TAG}\` to \`HEAD\`"
         fi
 
         # Save release notes to environment variable
@@ -89,14 +89,14 @@ runs:
         echo "EOF" >> $GITHUB_ENV
 
         # Count conventional commit types for summary
-        BREAKING_COUNT=$(echo "$NOTES" | grep -c "^* \(.*\)!:")
-        FEAT_COUNT=$(echo "$NOTES" | grep -c "^* feat")
-        FIX_COUNT=$(echo "$NOTES" | grep -c "^* fix")
-        DOCS_COUNT=$(echo "$NOTES" | grep -c "^* docs")
-        REFACTOR_COUNT=$(echo "$NOTES" | grep -c "^* refactor")
-        TEST_COUNT=$(echo "$NOTES" | grep -c "^* test")
-        CHORE_COUNT=$(echo "$NOTES" | grep -c "^* chore")
-        CI_COUNT=$(echo "$NOTES" | grep -c "^* ci")
+        BREAKING_COUNT=$(echo "$NOTES" | grep -c "^* \(.*\)!:" || echo 0)
+        FEAT_COUNT=$(echo "$NOTES" | grep -c "^* feat" || echo 0)
+        FIX_COUNT=$(echo "$NOTES" | grep -c "^* fix" || echo 0)
+        DOCS_COUNT=$(echo "$NOTES" | grep -c "^* docs" || echo 0)
+        REFACTOR_COUNT=$(echo "$NOTES" | grep -c "^* refactor" || echo 0)
+        TEST_COUNT=$(echo "$NOTES" | grep -c "^* test" || echo 0)
+        CHORE_COUNT=$(echo "$NOTES" | grep -c "^* chore" || echo 0)
+        CI_COUNT=$(echo "$NOTES" | grep -c "^* ci" || echo 0)
 
         # Add to step summary
         echo "## 📝 Release Notes Summary" >> $GITHUB_STEP_SUMMARY
