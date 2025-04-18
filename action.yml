@@ -240,3 +240,30 @@ runs:
         echo "If this was a real run, version \`${{ env.RELEASE_TAG }}\` would have been created." >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "To create an actual release, run with \`dry-run\` set to \`false\`." >> $GITHUB_STEP_SUMMARY
+
+    - name: Summarize Outputs
+      shell: bash
+      env:
+        OLD_VERSION: "${{ steps.determine-version.outputs.old_version }}"
+        NEXT_VERSION: "${{ steps.determine-version.outputs.next_version }}"
+        COMMIT_COUNT: "${{ steps.generate-notes.outputs.commit_count }}"
+        BREAKING_COUNT: "${{ steps.count-commits.outputs.breaking_count }}"
+        FEATURE_COUNT: "${{ steps.count-commits.outputs.feature_count }}"
+        FIX_COUNT: "${{ steps.count-commits.outputs.fix_count }}"
+        RELEASE_URL: "${{ steps.create-release.outputs.release_url || steps.dry-run-summary.outputs.release_url }}"
+        DRY_RUN: "${{ inputs.dry-run }}"
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📤 Action Outputs" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Output | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| old_version | \`$OLD_VERSION\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| next_version | \`$NEXT_VERSION\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| commit_count | \`$COMMIT_COUNT\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| breaking_count | \`$BREAKING_COUNT\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| feature_count | \`$FEATURE_COUNT\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| fix_count | \`$FIX_COUNT\` |" >> $GITHUB_STEP_SUMMARY
+        if [[ "${DRY_RUN}" != "true" ]]; then
+          echo "| release_url | [$RELEASE_URL]($RELEASE_URL) |" >> $GITHUB_STEP_SUMMARY
+        fi
