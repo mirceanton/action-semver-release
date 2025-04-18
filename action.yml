@@ -1,0 +1,25 @@
+---
+name: Semantic Release Helper
+description: GitHub Action to assist with semantic release using conventional commits
+
+inputs:
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+    default: ${{ github.token }}
+  default-version:
+    description: 'Default version to use if no previous release is found'
+    required: false
+    default: '0.0.0'
+
+outputs:
+  next-version:
+    description: 'The determined next version'
+  should-release:
+    description: 'Indicates if a release should be created'
+  release-notes:
+    description: 'Generated release notes based on commits'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

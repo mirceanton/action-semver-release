@@ -1,0 +1,62 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Release
+permissions: { contents: read }
+
+on:
+  schedule: [{ cron: '0 0 * * *' }]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry run mode (no actual release)'
+        required: false
+        default: false
+        type: boolean
+  push:
+    paths:
+      - .github/workflows/release.yaml
+      - action.yml
+      - dist/index.js
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    if: github.repository_owner == 'mirceanton' # ? don't run on forks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Token
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        id: app-token
+        with:
+          app-id: '${{ secrets.BOT_APP_ID }}'
+          private-key: '${{ secrets.BOT_APP_PRIVATE_KEY }}'
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          token: '${{ steps.app-token.outputs.token }}'
+
+      - name: Generate Release Metadata
+        id: release-metadata
+        uses: ./
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+
+      - name: Create Release
+        if: |
+          steps.release-metadata.outputs.should-release == 'true' &&
+          (
+            (github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'false') ||
+            (github.event_name == 'push' && github.event.ref == 'refs/heads/main') ||
+            (github.event_name == 'schedule')
+          )
+        uses: softprops/action-gh-release@v2.2.2
+        with:
+          tag_name: 'v${{ steps.release-metadata.outputs.next-version }}'
+          release_name: 'v${{ steps.release-metadata.outputs.next-version }}'
+          body: ${{ steps.release-metadata.outputs.release-notes }}
+          token: ${{ steps.app-token.outputs.token }}
