@@ -37,10 +37,6 @@ runs:
       with:
         script: |
           const path = require('path');
-          const scriptPath = path.join(process.env.GITHUB_ACTION_PATH, 'src/release.js');
-          
-          // Use dynamic import to load the script
+          const scriptPath = path.join(process.env.GITHUB_ACTION_PATH, 'release.mjs');
           const { main } = require(scriptPath);
-          
-          // Run the main function
           await main();
