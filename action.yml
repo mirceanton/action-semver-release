@@ -156,4 +156,4 @@ runs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "If this was a real run, version \`${{ env.RELEASE_TAG }}\` would have been created." >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "To create an actual release, set \`dry-run: false\` in your workflow." >> $GITHUB_STEP_SUMMARY
+        echo "To create an actual release, run with \`dry-run\` set to \`false\`." >> $GITHUB_STEP_SUMMARY
