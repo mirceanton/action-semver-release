@@ -41,7 +41,20 @@ jobs:
           fetch-depth: 0
 
       - name: Create Release
+        id: release
         uses: ./
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           dry-run: ${{ (inputs.dry-run || github.event_name == 'pull_request') }}
+
+      - name: Check outputs
+        run: |
+          echo "Old version: ${{ steps.release.outputs.old_version }}"
+          echo "Next version: ${{ steps.release.outputs.next_version }}"
+
+          echo "Commits count: ${{ steps.release.outputs.commit_count }}"
+          echo "Breaking commits: ${{ steps.release.outputs.breaking_count }}"
+          echo "Feature commits: ${{ steps.release.outputs.feature_count }}"
+          echo "Fix commits: ${{ steps.release.outputs.fix_count }}"
+
+          echo "Release created: ${{ steps.release.outputs.created }}"
