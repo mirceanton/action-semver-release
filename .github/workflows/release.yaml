@@ -57,4 +57,4 @@ jobs:
           echo "Feature commits: ${{ steps.release.outputs.feature_count }}"
           echo "Fix commits: ${{ steps.release.outputs.fix_count }}"
 
-          echo "Release created: ${{ steps.release.outputs.created }}"
+          echo "Release URL: ${{ steps.release.outputs.release_url }}"
