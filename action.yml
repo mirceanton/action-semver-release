@@ -1,0 +1,75 @@
+---
+name: Semantic Release Action
+description: Creates a new release using Semantic Versioning.
+author: Mircea-Pavel Anton
+
+inputs:
+  dry-run:
+    description: "Perform a dry run without creating an actual release"
+    required: false
+    default: "false"
+  github-token:
+    description: "GitHub token with repository access"
+    required: true
+  version-increment:
+    description: "Version increment strategy (major, minor, patch, prerelease or auto)"
+    required: false
+    default: "auto"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: "stable"
+
+    - name: Install SVU
+      shell: bash
+      run: go install github.com/caarlos0/svu/v3@v3.2.3
+
+    - name: Determine next version
+      shell: bash
+      run: |
+        # Map action input to SVU command
+        if [ "${{ inputs.version-increment }}" = "auto" ]; then
+          SVU_COMMAND="next"
+        else
+          SVU_COMMAND="${{ inputs.version-increment }}"
+        fi
+
+        # Get next version using SVU
+        NEXT_VERSION=$(svu $SVU_COMMAND)
+        echo "Next version: $NEXT_VERSION (tag: $NEXT_VERSION)"
+        echo "RELEASE_TAG=$NEXT_VERSION" >> $GITHUB_ENV
+
+    - name: Generate basic release notes
+      shell: bash
+      run: |
+        # Get previous tag or empty if none exists
+        PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+        # Generate notes from commit log
+        if [ -z "$PREV_TAG" ]; then
+          # if no previous tag exists, use the entire commit history
+          NOTES=$(git log --pretty=format:"* %s (%h)" --no-merges)
+        else
+          # if a tag exists, only use commits since that tag
+          NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)
+        fi
+
+        # Save release notes to environment variable
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+        echo "$NOTES" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Create GitHub Release
+      if: inputs.dry-run != 'true'
+      shell: bash
+      run: |
+        gh release create "${{ env.RELEASE_TAG }}" \
+          --title "Release ${{ env.RELEASE_TAG }}" \
+          --notes "${{ env.RELEASE_NOTES }}"
+        echo "Release created successfully: ${{ env.RELEASE_TAG }}"
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
