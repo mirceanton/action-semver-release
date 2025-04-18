@@ -26,8 +26,13 @@ runs:
 
     - name: Install SVU
       shell: bash
+      run: go install github.com/caarlos0/svu/v3@v3.2.3
+
+    - name: Update job summary
+      shell: bash
       run: |
-        go install github.com/caarlos0/svu/v3@v3.2.3
+        echo "## 🔨 Setting up the environment" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
         echo "✅ Installed SVU (Semantic Version Util)" >> $GITHUB_STEP_SUMMARY
 
     - name: Determine next version
@@ -42,10 +47,10 @@ runs:
 
         # Get next version using SVU
         NEXT_VERSION=$(svu $SVU_COMMAND)
-        
+
         # Get current version for summary
         CURRENT_VERSION=$(svu current 2>/dev/null || echo "none")
-        
+
         echo "Next version: $NEXT_VERSION (tag: $NEXT_VERSION)"
         echo "RELEASE_TAG=$NEXT_VERSION" >> $GITHUB_ENV
 
@@ -53,7 +58,7 @@ runs:
         echo "## 📊 Version Information" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "| **Version Type** | **Value** |" >> $GITHUB_STEP_SUMMARY
-        echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+        echo "| :--- | :---: |" >> $GITHUB_STEP_SUMMARY
         echo "| Current Version | \`$CURRENT_VERSION\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Next Version | \`$NEXT_VERSION\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Increment Strategy | \`${{ inputs.version-increment }}\` |" >> $GITHUB_STEP_SUMMARY
@@ -67,15 +72,14 @@ runs:
 
         # Generate notes from commit log
         if [ -z "$PREV_TAG" ]; then
-          # if no previous tag exists, use the entire commit history
           NOTES=$(git log --pretty=format:"* %s (%h)" --no-merges)
           COMMIT_COUNT=$(git rev-list --count HEAD)
-          COMMIT_RANGE="Initial commit to HEAD"
+          COMMIT_RANGE="Initial commit to \`HEAD\`"
         else
           # if a tag exists, only use commits since that tag
           NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)
           COMMIT_COUNT=$(git rev-list --count ${PREV_TAG}..HEAD)
-          COMMIT_RANGE="${PREV_TAG} to HEAD"
+          COMMIT_RANGE="\`${PREV_TAG}\`` to HEAD"
         fi
 
         # Save release notes to environment variable
@@ -84,15 +88,15 @@ runs:
         echo "EOF" >> $GITHUB_ENV
 
         # Count conventional commit types for summary
-        FEAT_COUNT=$(echo "$NOTES" | grep -c "^* feat" || echo 0)
-        FIX_COUNT=$(echo "$NOTES" | grep -c "^* fix" || echo 0)
-        DOCS_COUNT=$(echo "$NOTES" | grep -c "^* docs" || echo 0)
-        REFACTOR_COUNT=$(echo "$NOTES" | grep -c "^* refactor" || echo 0)
-        TEST_COUNT=$(echo "$NOTES" | grep -c "^* test" || echo 0)
-        CHORE_COUNT=$(echo "$NOTES" | grep -c "^* chore" || echo 0)
-        CI_COUNT=$(echo "$NOTES" | grep -c "^* ci" || echo 0)
-        BREAKING_COUNT=$(echo "$NOTES" | grep -c "^* \(.*\)!:" || echo 0)
-        
+        BREAKING_COUNT=$(echo "$NOTES" | grep -c "^* \(.*\)!:")
+        FEAT_COUNT=$(echo "$NOTES" | grep -c "^* feat")
+        FIX_COUNT=$(echo "$NOTES" | grep -c "^* fix")
+        DOCS_COUNT=$(echo "$NOTES" | grep -c "^* docs")
+        REFACTOR_COUNT=$(echo "$NOTES" | grep -c "^* refactor")
+        TEST_COUNT=$(echo "$NOTES" | grep -c "^* test")
+        CHORE_COUNT=$(echo "$NOTES" | grep -c "^* chore")
+        CI_COUNT=$(echo "$NOTES" | grep -c "^* ci")
+
         # Add to step summary
         echo "## 📝 Release Notes Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -110,25 +114,16 @@ runs:
         echo "| 👷 CI | $CI_COUNT |" >> $GITHUB_STEP_SUMMARY
         echo "| **Total Commits** | **$COMMIT_COUNT** |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        
-        # Add full release notes to summary if not too long
-        MAX_LINES=25
-        NOTES_LINES=$(echo "$NOTES" | wc -l)
 
+        # Add release notes to summary
         echo "### 📋 Release Notes" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ $NOTES_LINES -gt $MAX_LINES ]; then
-          echo "First $MAX_LINES commits out of $NOTES_LINES total:" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "$NOTES" | head -n $MAX_LINES >> $GITHUB_STEP_SUMMARY
-          echo '... and more' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-        else
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "$NOTES" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-        fi
+        echo "<details>" >> $GITHUB_STEP_SUMMARY
+        echo "<summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "$NOTES" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "</details>" >> $GITHUB_STEP_SUMMARY
 
     - name: Create GitHub Release
       if: inputs.dry-run != 'true'
@@ -137,7 +132,7 @@ runs:
         gh release create "${{ env.RELEASE_TAG }}" \
           --title "${{ env.RELEASE_TAG }}" \
           --notes "${{ env.RELEASE_NOTES }}"
-        
+
         # Add to step summary
         echo "## 🚀 Release Status" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -147,8 +142,6 @@ runs:
         echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
         echo "| Version | \`${{ env.RELEASE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| URL | https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }} |" >> $GITHUB_STEP_SUMMARY
-        
-        echo "Release created successfully: ${{ env.RELEASE_TAG }}"
       env:
         GH_TOKEN: ${{ inputs.github-token }}
 
