@@ -60,6 +60,8 @@ runs:
         # Map action input to SVU command
         if [ "${{ inputs.version-increment }}" = "auto" ]; then
           SVU_COMMAND="next"
+        elif [ "${{ inputs.version-increment }}" = "prerelease" ]; then
+          SVU_COMMAND="prerelease --prerelease=rc"
         else
           SVU_COMMAND="${{ inputs.version-increment }}"
         fi
