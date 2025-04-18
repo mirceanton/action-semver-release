@@ -53,13 +53,6 @@ runs:
       shell: bash
       run: go install github.com/caarlos0/svu/v3@v3.2.3
 
-    - name: Setup Summary - Environment
-      shell: bash
-      run: |
-        echo "## 🔨 Setting up the environment" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Installed SVU (Semantic Version Util)" >> $GITHUB_STEP_SUMMARY
-
     - name: Determine next version
       id: determine-version
       shell: bash
