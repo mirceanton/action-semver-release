@@ -17,15 +17,12 @@ inputs:
     default: "auto"
 
 outputs:
-  current_version:
+  old_version:
     description: "The current version before the release"
-    value: ${{ steps.determine-version.outputs.current_version }}
+    value: ${{ steps.determine-version.outputs.old_version }}
   next_version:
     description: "The next version determined for the release"
     value: ${{ steps.determine-version.outputs.next_version }}
-  version_tag:
-    description: "The tag used for the release"
-    value: ${{ steps.determine-version.outputs.version_tag }}
 
   commit_count:
     description: "Number of commits included in this release"
@@ -42,10 +39,7 @@ outputs:
 
   release_url:
     description: "URL of the created GitHub release"
-    value: ${{ steps.create-release.outputs.release_url || steps.dry-run-outputs.outputs.release_url }}
-  created:
-    description: "Boolean indicating if a release was created"
-    value: ${{ steps.create-release.outputs.created || steps.dry-run-outputs.outputs.created }}
+    value: ${{ steps.create-release.outputs.release_url || steps.dry-run-summary.outputs.release_url }}
 
 runs:
   using: "composite"
@@ -88,9 +82,8 @@ runs:
         echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
         # Set outputs for use in subsequent steps
-        echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "old_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-        echo "version_tag=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
     - name: Version Summary
       shell: bash
@@ -217,21 +210,9 @@ runs:
           --json url -q .url)
 
         echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_ENV
-
-        # Set outputs
         echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
-        echo "created=true" >> $GITHUB_OUTPUT
       env:
         GH_TOKEN: ${{ inputs.github-token }}
-
-    - name: Set dry run outputs
-      id: dry-run-outputs
-      if: inputs.dry-run == 'true'
-      shell: bash
-      run: |
-        # Set created output to false for dry runs
-        echo "created=false" >> $GITHUB_OUTPUT
-        echo "release_url=" >> $GITHUB_OUTPUT
 
     - name: Release Success Summary
       if: inputs.dry-run != 'true'
@@ -248,8 +229,10 @@ runs:
 
     - name: Dry Run Summary
       if: inputs.dry-run == 'true'
+      id: dry-run-summary
       shell: bash
       run: |
+        echo "release_url=" >> $GITHUB_OUTPUT
         echo "## 🔍 Dry Run Mode" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "⚠️ **This was a dry run. No release was created.**" >> $GITHUB_STEP_SUMMARY
