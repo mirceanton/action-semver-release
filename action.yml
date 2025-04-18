@@ -67,19 +67,21 @@ runs:
     - name: Generate basic release notes
       shell: bash
       run: |
-        set -xe
+        set -e
         # Get previous tag or empty if none exists
         PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
         # Generate notes from commit log
         if [ -z "$PREV_TAG" ]; then
           NOTES=$(git log --pretty=format:"* %s (%h)" --no-merges)
-          COMMIT_COUNT=$(git rev-list --count HEAD)
+          # Fix for commit count - ensure we're not counting the merge commit
+          COMMIT_COUNT=$(git rev-list --count --no-merges HEAD)
           COMMIT_RANGE="Initial commit to \`HEAD\`"
         else
           # if a tag exists, only use commits since that tag
           NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)
-          COMMIT_COUNT=$(git rev-list --count ${PREV_TAG}..HEAD)
+          # Fix for commit count - ensure we're not counting the merge commit
+          COMMIT_COUNT=$(git rev-list --count --no-merges ${PREV_TAG}..HEAD)
           COMMIT_RANGE="\`${PREV_TAG}\` to \`HEAD\`"
         fi
 
@@ -88,15 +90,24 @@ runs:
         echo "$NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
-        # Count conventional commit types for summary
-        BREAKING_COUNT=$(echo "$NOTES" | grep -c "^* \(.*\)!:" || echo 0)
-        FEAT_COUNT=$(echo "$NOTES" | grep -c "^* feat" || echo 0)
-        FIX_COUNT=$(echo "$NOTES" | grep -c "^* fix" || echo 0)
-        DOCS_COUNT=$(echo "$NOTES" | grep -c "^* docs" || echo 0)
-        REFACTOR_COUNT=$(echo "$NOTES" | grep -c "^* refactor" || echo 0)
-        TEST_COUNT=$(echo "$NOTES" | grep -c "^* test" || echo 0)
-        CHORE_COUNT=$(echo "$NOTES" | grep -c "^* chore" || echo 0)
-        CI_COUNT=$(echo "$NOTES" | grep -c "^* ci" || echo 0)
+        # Count conventional commit types for summary - Fix for the extra "0" issue
+        # Using a function to properly handle the grep counts
+        count_commits() {
+          local pattern="$1"
+          local count
+          count=$(echo "$NOTES" | grep -c "$pattern" || true)
+          # Strip any trailing newlines from the count
+          echo "$count" | tr -d '\n'
+        }
+
+        BREAKING_COUNT=$(count_commits "^* .*!:")
+        FEAT_COUNT=$(count_commits "^* feat")
+        FIX_COUNT=$(count_commits "^* fix")
+        DOCS_COUNT=$(count_commits "^* docs")
+        REFACTOR_COUNT=$(count_commits "^* refactor")
+        TEST_COUNT=$(count_commits "^* test")
+        CHORE_COUNT=$(count_commits "^* chore")
+        CI_COUNT=$(count_commits "^* ci")
 
         # Add to step summary
         echo "## 📝 Release Notes Summary" >> $GITHUB_STEP_SUMMARY
