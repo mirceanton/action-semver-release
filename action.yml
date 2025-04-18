@@ -8,6 +8,10 @@ inputs:
     description: "Perform a dry run without creating an actual release"
     required: false
     default: "false"
+  draft:
+    description: "Mark the release as a draft (unpublished)"
+    required: false
+    default: "false"
   github-token:
     description: "GitHub token with repository access"
     required: true
@@ -215,11 +219,19 @@ runs:
       if: inputs.dry-run != 'true' && env.NO_CHANGES != 'true'
       shell: bash
       run: |
+        EXTRA_FLAGS=""
+        if [ "${{ inputs.draft }}" = "true" ]; then
+          EXTRA_FLAGS="${EXTRA_FLAGS} --draft"
+        fi
+
         gh release create "${{ env.RELEASE_TAG }}" \
           --title "${{ env.RELEASE_TAG }}" \
-          --notes "${{ env.RELEASE_NOTES }}"
+          --notes "${{ env.RELEASE_NOTES }}" \
+          ${EXTRA_FLAGS}
+
         RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}"
         echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_ENV
+        echo "RELEASE_DRAFT=${{ inputs.draft }}" >> $GITHUB_ENV
         echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
       env:
         GH_TOKEN: ${{ inputs.github-token }}
@@ -236,6 +248,7 @@ runs:
         echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
         echo "| Version | \`${{ env.RELEASE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| URL | ${{ env.RELEASE_URL }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Draft | \`${{ env.RELEASE_DRAFT }}\` |" >> $GITHUB_STEP_SUMMARY
 
     - name: Dry Run Summary
       if: inputs.dry-run == 'true' && env.NO_CHANGES != 'true'
