@@ -75,6 +75,18 @@ jobs:
 | `github-token` | GitHub token with repository access | Yes | N/A |
 | `version-increment` | Version increment strategy (major, minor, patch, prerelease or auto) | No | `auto` |
 
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| `old_version` | The old version, **before** the release |
+| `next_version` | The next version determined for the release |
+| `commit_count` | Number of commits included in this release |
+| `breaking_count` | Number of breaking change commits |
+| `feature_count` | Number of feature commits |
+| `fix_count` | Number of fix commits |
+| `release_url` | URL of the created GitHub release (empty in dry-run mode) |
+
 ## How It Works
 
 1. The action installs SVU to analyze your commit history
