@@ -79,6 +79,12 @@ runs:
         echo "old_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
+        if [ "$CURRENT_VERSION" = "$NEXT_VERSION" ]; then
+          echo "NO_CHANGES=true" >> $GITHUB_ENV
+        else
+          echo "NO_CHANGES=false" >> $GITHUB_ENV
+        fi
+
     - name: Version Summary
       shell: bash
       run: |
@@ -91,7 +97,16 @@ runs:
         echo "| Increment Strategy | \`${{ inputs.version-increment }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 
+        if [ "${{ env.NO_CHANGES }}" = "true" ]; then
+          echo "## ℹ️ No Changes to Release" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The current and next versions are the same." >> $GITHUB_STEP_SUMMARY
+          echo "There are no changes to release. Exiting early." >> $GITHUB_STEP_SUMMARY
+          exit 0
+        fi
+
     - name: Generate release notes
+      if: env.NO_CHANGES != 'true'
       shell: bash
       id: generate-notes
       run: |
@@ -124,6 +139,7 @@ runs:
         echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
 
     - name: Count commits by type
+      if: env.NO_CHANGES != 'true'
       shell: bash
       id: count-commits
       run: |
@@ -162,6 +178,7 @@ runs:
         echo "fix_count=$FIX_COUNT" >> $GITHUB_OUTPUT
 
     - name: Release Notes Summary
+      if: env.NO_CHANGES != 'true'
       shell: bash
       run: |
         echo "## 📝 Release Notes Summary" >> $GITHUB_STEP_SUMMARY
@@ -195,7 +212,7 @@ runs:
 
     - name: Create GitHub Release
       id: create-release
-      if: inputs.dry-run != 'true'
+      if: inputs.dry-run != 'true' && env.NO_CHANGES != 'true'
       shell: bash
       run: |
         gh release create "${{ env.RELEASE_TAG }}" \
@@ -208,7 +225,7 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
 
     - name: Release Success Summary
-      if: inputs.dry-run != 'true'
+      if: inputs.dry-run != 'true' && env.NO_CHANGES != 'true'
       shell: bash
       run: |
         echo "## 🚀 Release Status" >> $GITHUB_STEP_SUMMARY
@@ -221,7 +238,7 @@ runs:
         echo "| URL | ${{ env.RELEASE_URL }} |" >> $GITHUB_STEP_SUMMARY
 
     - name: Dry Run Summary
-      if: inputs.dry-run == 'true'
+      if: inputs.dry-run == 'true' && env.NO_CHANGES != 'true'
       id: dry-run-summary
       shell: bash
       run: |
@@ -235,6 +252,7 @@ runs:
         echo "To create an actual release, run with \`dry-run\` set to \`false\`." >> $GITHUB_STEP_SUMMARY
 
     - name: Summarize Outputs
+      if: env.NO_CHANGES != 'true'
       shell: bash
       env:
         OLD_VERSION: "${{ steps.determine-version.outputs.old_version }}"
