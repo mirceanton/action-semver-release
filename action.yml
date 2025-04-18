@@ -40,12 +40,8 @@ runs:
 
         # Get next version using SVU
         NEXT_VERSION=$(svu $SVU_COMMAND)
-
-        # Add prefix if specified
-        RELEASE_TAG="${NEXT_VERSION}"
-        echo "Next version: $NEXT_VERSION (tag: $RELEASE_TAG)"
-        echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
-        echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+        echo "Next version: $NEXT_VERSION (tag: $NEXT_VERSION)"
+        echo "RELEASE_TAG=$NEXT_VERSION" >> $GITHUB_ENV
 
     - name: Generate basic release notes
       shell: bash
@@ -55,8 +51,10 @@ runs:
 
         # Generate notes from commit log
         if [ -z "$PREV_TAG" ]; then
+          # if no previous tag exists, use the entire commit history
           NOTES=$(git log --pretty=format:"* %s (%h)" --no-merges)
         else
+          # if a tag exists, only use commits since that tag
           NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)
         fi
 
