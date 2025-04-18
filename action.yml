@@ -26,7 +26,9 @@ runs:
 
     - name: Install SVU
       shell: bash
-      run: go install github.com/caarlos0/svu/v3@v3.2.3
+      run: |
+        go install github.com/caarlos0/svu/v3@v3.2.3
+        echo "✅ Installed SVU (Semantic Version Util)" >> $GITHUB_STEP_SUMMARY
 
     - name: Determine next version
       shell: bash
@@ -40,8 +42,22 @@ runs:
 
         # Get next version using SVU
         NEXT_VERSION=$(svu $SVU_COMMAND)
+        
+        # Get current version for summary
+        CURRENT_VERSION=$(svu current 2>/dev/null || echo "none")
+        
         echo "Next version: $NEXT_VERSION (tag: $NEXT_VERSION)"
         echo "RELEASE_TAG=$NEXT_VERSION" >> $GITHUB_ENV
+
+        # Add to step summary
+        echo "## 📊 Version Information" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| **Version Type** | **Value** |" >> $GITHUB_STEP_SUMMARY
+        echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+        echo "| Current Version | \`$CURRENT_VERSION\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Next Version | \`$NEXT_VERSION\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Increment Strategy | \`${{ inputs.version-increment }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
 
     - name: Generate basic release notes
       shell: bash
@@ -53,15 +69,66 @@ runs:
         if [ -z "$PREV_TAG" ]; then
           # if no previous tag exists, use the entire commit history
           NOTES=$(git log --pretty=format:"* %s (%h)" --no-merges)
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          COMMIT_RANGE="Initial commit to HEAD"
         else
           # if a tag exists, only use commits since that tag
           NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)
+          COMMIT_COUNT=$(git rev-list --count ${PREV_TAG}..HEAD)
+          COMMIT_RANGE="${PREV_TAG} to HEAD"
         fi
 
         # Save release notes to environment variable
         echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
         echo "$NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
+
+        # Count conventional commit types for summary
+        FEAT_COUNT=$(echo "$NOTES" | grep -c "^* feat" || echo 0)
+        FIX_COUNT=$(echo "$NOTES" | grep -c "^* fix" || echo 0)
+        DOCS_COUNT=$(echo "$NOTES" | grep -c "^* docs" || echo 0)
+        REFACTOR_COUNT=$(echo "$NOTES" | grep -c "^* refactor" || echo 0)
+        TEST_COUNT=$(echo "$NOTES" | grep -c "^* test" || echo 0)
+        CHORE_COUNT=$(echo "$NOTES" | grep -c "^* chore" || echo 0)
+        CI_COUNT=$(echo "$NOTES" | grep -c "^* ci" || echo 0)
+        BREAKING_COUNT=$(echo "$NOTES" | grep -c "^* \(.*\)!:" || echo 0)
+        
+        # Add to step summary
+        echo "## 📝 Release Notes Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Analyzed commits from $COMMIT_RANGE" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| **Commit Type** | **Count** |" >> $GITHUB_STEP_SUMMARY
+        echo "| :--- | ---: |" >> $GITHUB_STEP_SUMMARY
+        echo "| 💥 Breaking Changes | $BREAKING_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| ✨ Features | $FEAT_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🐛 Bug Fixes | $FIX_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| 📚 Documentation | $DOCS_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| ♻️ Refactoring | $REFACTOR_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🧪 Tests | $TEST_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🔧 Chores | $CHORE_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| 👷 CI | $CI_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Total Commits** | **$COMMIT_COUNT** |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Add full release notes to summary if not too long
+        MAX_LINES=25
+        NOTES_LINES=$(echo "$NOTES" | wc -l)
+
+        echo "### 📋 Release Notes" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ $NOTES_LINES -gt $MAX_LINES ]; then
+          echo "First $MAX_LINES commits out of $NOTES_LINES total:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$NOTES" | head -n $MAX_LINES >> $GITHUB_STEP_SUMMARY
+          echo '... and more' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$NOTES" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
 
     - name: Create GitHub Release
       if: inputs.dry-run != 'true'
@@ -70,6 +137,29 @@ runs:
         gh release create "${{ env.RELEASE_TAG }}" \
           --title "${{ env.RELEASE_TAG }}" \
           --notes "${{ env.RELEASE_NOTES }}"
+        
+        # Add to step summary
+        echo "## 🚀 Release Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Release successfully created!**" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| **Release Info** | **Details** |" >> $GITHUB_STEP_SUMMARY
+        echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+        echo "| Version | \`${{ env.RELEASE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| URL | https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }} |" >> $GITHUB_STEP_SUMMARY
+        
         echo "Release created successfully: ${{ env.RELEASE_TAG }}"
       env:
         GH_TOKEN: ${{ inputs.github-token }}
+
+    - name: Dry Run Summary
+      if: inputs.dry-run == 'true'
+      shell: bash
+      run: |
+        echo "## 🔍 Dry Run Mode" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "⚠️ **This was a dry run. No release was created.**" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "If this was a real run, version \`${{ env.RELEASE_TAG }}\` would have been created." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "To create an actual release, set \`dry-run: false\` in your workflow." >> $GITHUB_STEP_SUMMARY
