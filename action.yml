@@ -68,7 +68,7 @@ runs:
       shell: bash
       run: |
         gh release create "${{ env.RELEASE_TAG }}" \
-          --title "Release ${{ env.RELEASE_TAG }}" \
+          --title "${{ env.RELEASE_TAG }}" \
           --notes "${{ env.RELEASE_NOTES }}"
         echo "Release created successfully: ${{ env.RELEASE_TAG }}"
       env:
