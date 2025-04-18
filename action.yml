@@ -67,6 +67,7 @@ runs:
     - name: Generate basic release notes
       shell: bash
       run: |
+        set -xe
         # Get previous tag or empty if none exists
         PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
