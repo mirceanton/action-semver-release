@@ -79,7 +79,7 @@ runs:
           # if a tag exists, only use commits since that tag
           NOTES=$(git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)
           COMMIT_COUNT=$(git rev-list --count ${PREV_TAG}..HEAD)
-          COMMIT_RANGE="\`${PREV_TAG}\`` to HEAD"
+          COMMIT_RANGE="\`${PREV_TAG}\` to HEAD"
         fi
 
         # Save release notes to environment variable
