@@ -2,6 +2,213 @@ const core = require('@actions/core');
 const github = require('@actions/github');
 const semver = require('semver');
 
+async function getLatestReleaseData(octokit, owner, repo, defaultVersion) {
+  try {
+    const latestRelease = await octokit.rest.repos.getLatestRelease({ owner, repo });
+    core.debug(`Latest release data: ${JSON.stringify(latestRelease.data, null, 2)}`);
+
+    if (!latestRelease.data.created_at) {
+      core.warning('No previous releases found, using default version');
+      return {
+        currentReleaseDate: new Date(),
+        currentReleaseTag: defaultVersion
+      };
+    }
+
+    return {
+      currentReleaseDate: new Date(latestRelease.data.created_at),
+      currentReleaseTag: semver.clean(latestRelease.data.tag_name) || defaultVersion
+    };
+  } catch (error) {
+    throw new Error(`Failed to get latest release: ${error.message}`);
+  }
+}
+
+async function getCommitsSinceDate(octokit, owner, repo, sinceDate) {
+  try {
+    const { data: commits } = await octokit.rest.repos.listCommits({
+      owner,
+      repo,
+      since: sinceDate.toISOString()
+    });
+
+    const parsedCommits = commits.map((commit) => {
+      const message = commit.commit.message;
+      const shortSha = commit.sha.substring(0, 7);
+
+      // Parse conventional commit format: <type>[optional scope]: <description>\n[optional body]
+      const lines = message.split('\n');
+      const firstLine = lines[0];
+      const body = lines.slice(1).join('\n').trim();
+
+      // Regex to parse: type(scope)!: description
+      const conventionalCommitRegex = /^(\w+)(\(([^)]+)\))?(!)?:\s*(.+)$/;
+      const match = firstLine.match(conventionalCommitRegex);
+
+      let type, scope, isBreaking, description;
+
+      if (match) {
+        type = match[1]; // feat, fix, docs, etc.
+        scope = match[3] || ''; // optional scope
+        isBreaking = !!match[4]; // ! indicates breaking change
+        description = match[5]; // commit description
+      } else {
+        type = 'other';
+        scope = '';
+        isBreaking = false;
+        description = firstLine;
+      }
+
+      // Check for breaking changes in body (BREAKING CHANGE: footer)
+      const hasBreakingChangeInBody = message.includes('BREAKING CHANGE');
+      if (hasBreakingChangeInBody) {
+        isBreaking = true;
+      }
+
+      return {
+        sha: shortSha,
+        type: type,
+        scope: scope,
+        description: description,
+        body: body,
+        isBreaking: isBreaking,
+        fullMessage: message,
+        author: commit.commit.author.name
+      };
+    });
+
+    return parsedCommits;
+  } catch (error) {
+    throw new Error(`Failed to get commits: ${error.message}`);
+  }
+}
+
+function calculateNextVersion(parsedCommits, currentVersion) {
+  let shouldBumpMajor = false;
+  let shouldBumpMinor = false;
+  let shouldBumpPatch = false;
+
+  for (const commit of parsedCommits) {
+    if (commit.isBreaking) {
+      shouldBumpMajor = true;
+      core.info(`Breaking change found: ${commit.sha}`);
+      continue;
+    }
+
+    switch (commit.type) {
+      case 'feat':
+        shouldBumpMinor = true;
+        core.info(`Feature commit found: ${commit.sha}`);
+        break;
+
+      case 'fix':
+        shouldBumpPatch = true;
+        core.info(`Fix commit found: ${commit.sha}`);
+        break;
+
+      default:
+        core.info(`${commit.type} commit found: ${commit.sha}`);
+        break;
+    }
+  }
+
+  if (shouldBumpMajor) {
+    return semver.inc(currentVersion, 'major');
+  } else if (shouldBumpMinor) {
+    return semver.inc(currentVersion, 'minor');
+  } else if (shouldBumpPatch) {
+    return semver.inc(currentVersion, 'patch');
+  }
+
+  return currentVersion;
+}
+
+function generateReleaseNotes(parsedCommits, version) {
+  const commitTypes = {
+    breaking: {
+      title: '## 💥 Breaking Changes',
+      commits: []
+    },
+    feat: {
+      title: '## ✨ New Features',
+      commits: []
+    },
+    fix: {
+      title: '## 🐛 Bug Fixes',
+      commits: []
+    },
+    perf: {
+      title: '## ⚡ Performance Improvements',
+      commits: []
+    },
+    docs: {
+      title: '## 📚 Documentation',
+      commits: []
+    },
+    build: {
+      title: '## 📦 Build System',
+      commits: []
+    },
+    ci: {
+      title: '## 👷 CI/CD',
+      commits: []
+    },
+    test: {
+      title: '## 🧪 Tests',
+      commits: []
+    },
+    refactor: {
+      title: '## ♻️ Code Refactoring',
+      commits: []
+    },
+    style: {
+      title: '## 💄 Code Style',
+      commits: []
+    },
+    chore: {
+      title: '## 🧹 Chores',
+      commits: []
+    },
+    other: {
+      title: '## 🔧 Other Changes',
+      commits: []
+    }
+  };
+
+  parsedCommits.forEach((commit) => {
+    if (commit.isBreaking) {
+      commitTypes.breaking.commits.push(commit);
+    } else {
+      const type = commit.type;
+      if (type in commitTypes) {
+        commitTypes[type].commits.push(commit);
+      } else {
+        commitTypes.other.commits.push(commit);
+      }
+    }
+  });
+
+  let releaseNotes = `# Release ${version}\n\n`;
+  for (const [typeName, typeConfig] of Object.entries(commitTypes)) {
+    if (typeConfig.commits.length > 0) {
+      releaseNotes += `${typeConfig.title}\n\n`;
+      typeConfig.commits.forEach((commit) => {
+        const scopeText = commit.scope ? `**${commit.scope}**: ` : '';
+        const description = commit.description;
+        releaseNotes += `- ${scopeText}${description} (${commit.sha})\n`;
+      });
+      releaseNotes += '\n';
+    }
+  }
+
+  const hasAnyCommits = Object.values(commitTypes).some((typeConfig) => typeConfig.commits.length > 0);
+  if (!hasAnyCommits) {
+    releaseNotes += 'No significant changes in this release.\n\n';
+  }
+
+  return releaseNotes;
+}
+
 async function run() {
   try {
     const token = core.getInput('github-token', { required: true });
@@ -13,85 +220,29 @@ async function run() {
     const { owner, repo } = context.repo;
     core.debug(`Repository: ${owner}/${repo}`);
 
-    // Get the latest release
-    let currentReleaseDate, currentReleaseTag;
-    try {
-      const latestRelease = await octokit.rest.repos.getLatestRelease({ owner, repo });
-      core.debug(`Latest release data: ${JSON.stringify(latestRelease.data, null, 2)}`);
-
-      if (!latestRelease.data.created_at) {
-        core.warning('No previous releases found, using default version');
-        currentReleaseDate = new Date();
-        currentReleaseTag = defaultVersion;
-      } else {
-        currentReleaseDate = new Date(latestRelease.data.created_at);
-        currentReleaseTag = semver.clean(latestRelease.data.tag_name) || defaultVersion;
-      }
-    } catch (error) {
-      throw new Error(`Failed to get latest release: ${error.message}`);
-    }
+    // Get latest release data
+    const { currentReleaseDate, currentReleaseTag } = await getLatestReleaseData(octokit, owner, repo, defaultVersion);
     core.info(`Current release: ${currentReleaseTag} at ${currentReleaseDate.toISOString()}`);
 
-    // Get all commits since the latest release
-    try {
-      const { data: commits } = await octokit.rest.repos.listCommits({
-        owner,
-        repo,
-        since: currentReleaseDate.toISOString()
-      });
-      core.info(`Found ${commits.length} commits since last release`);
+    // Get all commits since the latest release and parse them
+    const parsedCommits = await getCommitsSinceDate(octokit, owner, repo, currentReleaseDate);
+    core.info(`Found ${parsedCommits.length} commits since last release`);
 
-      // Analyze commits for version bump
-      let shouldBumpMajor = false;
-      let shouldBumpMinor = false;
-      let shouldBumpPatch = false;
+    // Calculate next version based on parsed commits
+    const nextVersion = calculateNextVersion(parsedCommits, currentReleaseTag);
+    core.info(`Next version determined to be: ${nextVersion}`);
+    const shouldRelease = nextVersion !== currentReleaseTag;
+    core.info(`Should release: ${shouldRelease}`);
 
-      for (const commit of commits) {
-        const message = commit.commit.message;
-        if (message.includes('BREAKING CHANGE:')) {
-          shouldBumpMajor = true;
-          core.info(`Breaking change found in commit body: ${commit.sha}`);
-          continue;
-        }
+    // Generate release notes from parsed commits
+    const releaseNotes = generateReleaseNotes(parsedCommits, nextVersion);
+    core.info('Generated release notes:');
+    core.info(releaseNotes);
 
-        const hasBreakingChange = /^(feat|fix)(\([^)]*\))?!:/.test(message);
-        if (hasBreakingChange) {
-          shouldBumpMajor = true;
-          core.info(`Breaking change found with exclamation mark syntax: ${commit.sha}`);
-          continue;
-        }
-
-        if (message.startsWith('feat:') || message.startsWith('feat(')) {
-          shouldBumpMinor = true;
-          core.info(`Feature commit found: ${commit.sha}`);
-          continue;
-        }
-
-        if (message.startsWith('fix:') || message.startsWith('fix(')) {
-          shouldBumpPatch = true;
-          core.info(`Fix commit found: ${commit.sha}`);
-        }
-      }
-
-      // Determine next version
-      let nextVersion = currentReleaseTag;
-      if (shouldBumpMajor) {
-        nextVersion = semver.inc(currentReleaseTag, 'major');
-      } else if (shouldBumpMinor) {
-        nextVersion = semver.inc(currentReleaseTag, 'minor');
-      } else if (shouldBumpPatch) {
-        nextVersion = semver.inc(currentReleaseTag, 'patch');
-      }
-      const shouldRelease = nextVersion !== currentReleaseTag;
-
-      core.info(`Next version determined to be: ${nextVersion}`);
-
-      core.setOutput('next-version', nextVersion);
-      core.setOutput('should-release', shouldRelease);
-      core.setOutput('release-notes', '');
-    } catch (error) {
-      throw new Error(`Failed to analyze commits: ${error.message}`);
-    }
+    // Set outputs
+    core.setOutput('next-version', nextVersion);
+    core.setOutput('should-release', shouldRelease);
+    core.setOutput('release-notes', releaseNotes);
   } catch (error) {
     core.setFailed(`Action failed with error: ${error.message}`);
   }
@@ -101,4 +252,4 @@ if (require.main === module) {
   run();
 }
 
-module.exports = { run };
+module.exports = { run, getLatestReleaseData, getCommitsSinceDate, calculateNextVersion, generateReleaseNotes };
