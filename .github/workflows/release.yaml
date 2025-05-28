@@ -4,7 +4,8 @@ name: Release
 permissions: { contents: read }
 
 on:
-  schedule: [{ cron: '0 0 * * *' }] # wet run
+  schedule: [{ cron: '0 0 * * *' }]
+
   workflow_dispatch:
     inputs:
       dry-run:
@@ -12,11 +13,12 @@ on:
         required: false
         default: false
         type: boolean
+
   push:
     paths:
       - .github/workflows/release.yaml
       - action.yml
-      - index.js
+      - dist/index.js
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -40,8 +42,14 @@ jobs:
           fetch-depth: 0
           token: '${{ steps.app-token.outputs.token }}'
 
-      - name: Create Release
-        uses: mirceanton/action-semver-release@c48aeafa1300c3f2867ee27250f5ed076c7cb2a0 # v1.3.0
+      - name: Generate Release Metadata
+        id: release-metadata
+        uses: ./
         with:
           github-token: ${{ steps.app-token.outputs.token }}
-          dry-run: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry-run) || (github.event_name == 'push') }}
+      
+      - name: [Debug] Release Metadata
+        run: |
+          echo "Release metadata: ${{ toJson(steps.release-metadata.outputs) }}"
+
+# TODO - name: Create Release
