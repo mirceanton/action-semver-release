@@ -30,7 +30,7 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
 
       const result = await getLatestReleaseData(mockOctokit, 'owner', 'repo', '0.0.0');
       expect(result).toEqual({
-        currentReleaseDate: new Date('2024-01-15T10:30:00Z'),
+        currentReleaseDate: new Date('2024-01-15T10:30:01Z'), // note the 1 sec added
         currentReleaseTag: '1.2.3'
       });
     });
@@ -45,7 +45,7 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
 
       const result = await getLatestReleaseData(mockOctokit, 'owner', 'repo', '0.1.0');
       expect(result).toEqual({
-        currentReleaseDate: new Date('2024-01-15T10:30:00Z'),
+        currentReleaseDate: new Date('2024-01-15T10:30:01Z'), // note the 1 sec added
         currentReleaseTag: '0.1.0'
       });
     });

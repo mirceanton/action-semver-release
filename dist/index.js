@@ -32631,8 +32631,10 @@ async function getLatestReleaseData(octokit, owner, repo, defaultVersion) {
       };
     }
 
+    releaseDate = new Date(latestRelease.data.created_at);
     return {
-      currentReleaseDate: new Date(latestRelease.data.created_at),
+      // Adding 10 seconds to ensure we don't include commits made at the exact release time
+      currentReleaseDate: new Date(releaseDate.getTime() + 1000),
       currentReleaseTag: semver.clean(latestRelease.data.tag_name) || defaultVersion
     };
   } catch (error) {
