@@ -243,6 +243,15 @@ async function run() {
     core.setOutput('next-version', nextVersion);
     core.setOutput('should-release', shouldRelease);
     core.setOutput('release-notes', releaseNotes);
+
+    // Set Summary
+    core.summary
+      .addHeading('Release Summary')
+      .addRaw(`Current Version: ${currentReleaseTag}`)
+      .addRaw(`Next Version: ${nextVersion}`)
+      .addRaw(`Should Release: ${shouldRelease}`)
+      .addRaw('Release Notes:')
+      .addRaw(releaseNotes);
   } catch (error) {
     core.setFailed(`Action failed with error: ${error.message}`);
   }
