@@ -32860,16 +32860,11 @@ async function run() {
     await core.summary.addRaw(`Should Release: ${shouldRelease}`);
 
     // Generate release notes
-    if (shouldRelease) {
-      const releaseNotes = generateReleaseNotes(parsedCommits, nextVersion);
-      core.info('Generated release notes:\n' + releaseNotes);
-      await core.summary.addRaw(`## Release Notes for ${nextVersion}\n\n${releaseNotes}`);
-      core.setOutput('release-notes', releaseNotes);
-    } else {
-      core.info('No release needed, skipping release notes generation');
-      core.setOutput('release-notes', '');
-      await core.summary.addRaw('No release needed, skipping release notes generation.\n');
-    }
+    const releaseNotes = generateReleaseNotes(parsedCommits, nextVersion);
+    core.info('Generated release notes:\n' + releaseNotes);
+    await core.summary.addRaw(`## Release Notes for ${nextVersion}\n\n${releaseNotes}`);
+    core.setOutput('release-notes', releaseNotes);
+
     return;
   } catch (error) {
     core.setFailed(`Action failed with error: ${error.message}`);
