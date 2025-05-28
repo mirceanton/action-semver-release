@@ -15,6 +15,10 @@ inputs:
 outputs:
   next-version:
     description: 'The determined next version'
+  should-release:
+    description: 'Indicates if a release should be created'
+  release-notes:
+    description: 'Generated release notes based on commits'
 
 runs:
   using: 'node20'
