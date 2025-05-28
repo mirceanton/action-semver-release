@@ -32861,17 +32861,32 @@ async function run() {
     core.setOutput('release-notes', releaseNotes);
 
     // Set Summary
+    const current = {
+      major: semver.major(currentReleaseTag),
+      minor: semver.minor(currentReleaseTag),
+      patch: semver.patch(currentReleaseTag)
+    };
+    const next = {
+      major: semver.major(nextVersion),
+      minor: semver.minor(nextVersion),
+      patch: semver.patch(nextVersion)
+    };
+
+    // Determine what changed and add appropriate icons
+    const majorIcon = next.major > current.major ? ' 🔼' : '';
+    const minorIcon = next.minor > current.minor ? ' 🔼' : next.minor < current.minor ? ' 🔄' : '';
+    const patchIcon = next.patch > current.patch ? ' 🔼' : next.patch < current.patch ? ' 🔄' : '';
+    const releaseIcon = shouldRelease ? '✅' : '❌';
+
     await core.summary
       .addHeading('Release Summary', 1)
       .addTable([
-        { data: 'Current Release', header: true },
-        { data: currentReleaseTag, header: false },
-        { data: 'Next Version', header: true },
-        { data: nextVersion, header: false },
-        { data: 'Should Release', header: true },
-        { data: shouldRelease.toString(), header: false }
+        ['', 'Major', 'Minor', 'Patch'],
+        ['Current', current.major.toString(), current.minor.toString(), current.patch.toString()],
+        ['Next', `${next.major}${majorIcon}`, `${next.minor}${minorIcon}`, `${next.patch}${patchIcon}`]
       ])
-      .addHeading('Release Notes:', 2)
+      .addRaw(`\n**Should Release:** ${releaseIcon}\n\n`)
+      .addHeading('Release Notes', 2)
       .addCodeBlock(releaseNotes, 'markdown')
       .write();
   } catch (error) {
