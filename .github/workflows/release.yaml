@@ -47,8 +47,8 @@ jobs:
         uses: ./
         with:
           github-token: ${{ steps.app-token.outputs.token }}
-      
-      - name: [Debug] Release Metadata
+
+      - name: '[Debug] Release Metadata'
         run: |
           echo "Release metadata: ${{ toJson(steps.release-metadata.outputs) }}"
 
