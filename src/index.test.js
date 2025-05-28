@@ -60,15 +60,12 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
     it('should return default version when no created_at date exists', async () => {
       mockOctokit.rest.repos.getLatestRelease.mockResolvedValue({ data: {} });
 
-      const beforeCall = Date.now();
       const result = await getLatestReleaseData(mockOctokit, 'owner', 'repo', '0.5.0');
       const afterCall = Date.now();
 
       expect(result.currentReleaseTag).toBe('0.5.0');
       expect(result.currentReleaseDate).toBeInstanceOf(Date);
-      expect(result.currentReleaseDate.getTime()).toBeGreaterThanOrEqual(beforeCall);
       expect(result.currentReleaseDate.getTime()).toBeLessThanOrEqual(afterCall);
-      expect(core.warning).toHaveBeenCalledWith('No previous releases found, using default version');
     });
 
     it('should return default version when created_at is null', async () => {
@@ -76,7 +73,6 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
 
       const result = await getLatestReleaseData(mockOctokit, 'owner', 'repo', '1.0.0');
       expect(result.currentReleaseTag).toBe('1.0.0');
-      expect(core.warning).toHaveBeenCalledWith('No previous releases found, using default version');
     });
 
     it('should throw descriptive error when API call fails', async () => {

@@ -10,7 +10,7 @@ async function getLatestReleaseData(octokit, owner, repo, defaultVersion) {
     if (!latestRelease.data.created_at) {
       core.warning('No previous releases found, using default version');
       return {
-        currentReleaseDate: new Date(),
+        currentReleaseDate: new Date(0),
         currentReleaseTag: defaultVersion
       };
     }
@@ -21,9 +21,9 @@ async function getLatestReleaseData(octokit, owner, repo, defaultVersion) {
     };
   } catch (error) {
     if (error.message.includes('Not Found')) {
-      core.warning('No releases found, using default version');
+      core.warning('No previous releases found, using default version');
       return {
-        currentReleaseDate: new Date(),
+        currentReleaseDate: new Date(0),
         currentReleaseTag: defaultVersion
       };
     }
