@@ -63,4 +63,4 @@ jobs:
           echo "Next version: ${{ steps.release-metadata.outputs.next-version }}"
           echo "Should release: ${{ steps.release-metadata.outputs.should-release }}"
           echo "Release notes: ${{ steps.release-metadata.outputs.release-notes }}"
-          echo "Dry run: ${{ github.event.inputs.dry-run || github.event_name == 'pull_request' }}"
+          echo "Dry run: ${{ github.event.inputs.dry-run || (github.event_name == 'push' && github.ref == 'refs/heads/main' ) }}"
