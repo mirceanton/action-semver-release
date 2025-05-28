@@ -32861,7 +32861,7 @@ async function run() {
     core.setOutput('release-notes', releaseNotes);
 
     // Set Summary
-    core.summary
+    await core.summary
       .addHeading('Release Summary')
       .addRaw(`Current Version: ${currentReleaseTag}`)
       .addRaw(`Next Version: ${nextVersion}`)
