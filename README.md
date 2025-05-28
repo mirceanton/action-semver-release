@@ -1,7 +1,7 @@
-# Semantic Release Action
+# Semantic Release Metadata Action
 
 Automatically determine the next semantic version and generate release notes based on
-[Conventional Commits](https://www.conventionalcommits.org/) since your last release.
+[Conventional Commits](https://www.conventionalcommits.org/).
 
 ## Features
 
@@ -39,17 +39,16 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: 'v${{ steps.release-metadata.outputs.next-version }}'
-          tag_name:'v${{ steps.release-metadata.outputs.next-version }}'
+          tag_name: 'v${{ steps.release-metadata.outputs.next-version }}'
           body: ${{ steps.release-metadata.outputs.release-notes }}
-
 ```
 
 ## Inputs
 
-| Input             | Description                            | Required | Default |
-| ----------------- | -------------------------------------- | -------- | ------- |
-| `github-token`    | GitHub token for API access            | Yes      | -       |
-| `default-version` | Default version when no releases exist | No       | `0.0.0` |
+| Input             | Description                            | Required | Default               |
+| ----------------- | -------------------------------------- | -------- | --------------------- |
+| `github-token`    | GitHub token for API access            | Yes      | `${{ github.token }}` |
+| `default-version` | Default version when no releases exist | No       | `0.0.0`               |
 
 ## Outputs
 
