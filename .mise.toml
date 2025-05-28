@@ -7,3 +7,4 @@ node = "22"
 
 # Others
 "npm:renovate" = "40.25.0"
+gh = "latest"
