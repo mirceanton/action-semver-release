@@ -34,7 +34,7 @@ describe('Semantic Release Helper Action', () => {
   const mockSetOutput = core.setOutput;
   const mockSetFailed = core.setFailed;
   const mockInfo = core.info;
-  const mockWarn = core.warn;
+  const mockWarn = core.warning;
   const mockDebug = core.debug;
 
   const mockOctokit = github.getOctokit();
@@ -55,9 +55,9 @@ describe('Semantic Release Helper Action', () => {
 
   test('No previous release should use default version', async () => {
     // Setup mocks
-    const notFoundError = new Error('No release found');
-    notFoundError.status = 404;
-    mockGetLatestRelease.mockRejectedValue(notFoundError);
+    mockGetLatestRelease.mockResolvedValue({
+      data: {}
+    });
     mockListCommits.mockResolvedValue({
       data: [
         {
