@@ -219,37 +219,40 @@ async function run() {
     const context = github.context;
     const { owner, repo } = context.repo;
     core.debug(`Repository: ${owner}/${repo}`);
-    await core.summary.addHeading('# Release Summary');
 
     // Get latest release data
     const { currentReleaseDate, currentReleaseTag } = await getLatestReleaseData(octokit, owner, repo, defaultVersion);
     core.info(`Current release: ${currentReleaseTag} at ${currentReleaseDate.toISOString()}`);
-    await core.summary.addRaw(`Current Release: ${currentReleaseTag} at ${currentReleaseDate.toISOString()}\n\n`);
 
     // Get all commits since the latest release and parse them
     const parsedCommits = await getCommitsSinceDate(octokit, owner, repo, currentReleaseDate);
     core.info(`Found ${parsedCommits.length} commits since last release`);
-    await core.summary.addRaw(`Found ${parsedCommits.length} commits since last release:\n\n`);
 
     // Calculate next version based on parsed commits
     const nextVersion = calculateNextVersion(parsedCommits, currentReleaseTag);
     core.info(`Next version determined to be: ${nextVersion}`);
-    core.setOutput('next-version', nextVersion);
-    await core.summary.addRaw(`Next Version: ${nextVersion}`);
-
-    // Determine if a release is needed
     const shouldRelease = nextVersion !== currentReleaseTag;
     core.info(`Should release: ${shouldRelease}`);
-    core.setOutput('should-release', shouldRelease);
-    await core.summary.addRaw(`Should Release: ${shouldRelease}`);
 
-    // Generate release notes
+    // Generate release notes from parsed commits
     const releaseNotes = generateReleaseNotes(parsedCommits, nextVersion);
-    core.info('Generated release notes:\n' + releaseNotes);
-    await core.summary.addRaw(`## Release Notes for ${nextVersion}\n\n${releaseNotes}`);
+    core.info('Generated release notes:');
+    core.info(releaseNotes);
+
+    // Set outputs
+    core.setOutput('next-version', nextVersion);
+    core.setOutput('should-release', shouldRelease);
     core.setOutput('release-notes', releaseNotes);
 
-    return;
+    // Set Summary
+    await core.summary
+      .addHeading('Release Summary', 1)
+      .addRaw(`Current Version: ${currentReleaseTag}`)
+      .addRaw(`Next Version: ${nextVersion}`)
+      .addRaw(`Should Release: ${shouldRelease}`)
+      .addHeading('Release Notes:', 2)
+      .addRaw(releaseNotes)
+      .write();
   } catch (error) {
     core.setFailed(`Action failed with error: ${error.message}`);
   }
