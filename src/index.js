@@ -15,7 +15,7 @@ async function getLatestReleaseData(octokit, owner, repo, defaultVersion) {
       };
     }
 
-    releaseDate = new Date(latestRelease.data.created_at);
+    const releaseDate = new Date(latestRelease.data.created_at);
     return {
       // Adding 10 seconds to ensure we don't include commits made at the exact release time
       currentReleaseDate: new Date(releaseDate.getTime() + 1000),
