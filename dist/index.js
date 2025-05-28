@@ -32863,11 +32863,16 @@ async function run() {
     // Set Summary
     await core.summary
       .addHeading('Release Summary', 1)
-      .addRaw(`Current Version: ${currentReleaseTag}`)
-      .addRaw(`Next Version: ${nextVersion}`)
-      .addRaw(`Should Release: ${shouldRelease}`)
+      .addTable([
+        { data: 'Current Release', header: true },
+        { data: currentReleaseTag, header: false },
+        { data: 'Next Version', header: true },
+        { data: nextVersion, header: false },
+        { data: 'Should Release', header: true },
+        { data: shouldRelease.toString(), header: false }
+      ])
       .addHeading('Release Notes:', 2)
-      .addRaw(releaseNotes)
+      .addCodeBlock(releaseNotes, 'markdown')
       .write();
   } catch (error) {
     core.setFailed(`Action failed with error: ${error.message}`);
