@@ -32655,7 +32655,7 @@ async function run() {
         repo,
         since: currentReleaseDate.toISOString()
       });
-      console.log(`Found ${commits.length} commits since last release`);
+      core.info(`Found ${commits.length} commits since last release`);
 
       // Analyze commits for version bump
       let shouldBumpMajor = false;
@@ -32666,26 +32666,26 @@ async function run() {
         const message = commit.commit.message;
         if (message.includes('BREAKING CHANGE:')) {
           shouldBumpMajor = true;
-          console.log(`Breaking change found in commit body: ${commit.sha}`);
+          core.info(`Breaking change found in commit body: ${commit.sha}`);
           continue;
         }
 
         const hasBreakingChange = /^(feat|fix)(\([^)]*\))?!:/.test(message);
         if (hasBreakingChange) {
           shouldBumpMajor = true;
-          console.log(`Breaking change found with exclamation mark syntax: ${commit.sha}`);
+          core.info(`Breaking change found with exclamation mark syntax: ${commit.sha}`);
           continue;
         }
 
         if (message.startsWith('feat:') || message.startsWith('feat(')) {
           shouldBumpMinor = true;
-          console.log(`Feature commit found: ${commit.sha}`);
+          core.info(`Feature commit found: ${commit.sha}`);
           continue;
         }
 
         if (message.startsWith('fix:') || message.startsWith('fix(')) {
           shouldBumpPatch = true;
-          console.log(`Fix commit found: ${commit.sha}`);
+          core.info(`Fix commit found: ${commit.sha}`);
         }
       }
 
@@ -32698,9 +32698,13 @@ async function run() {
       } else if (shouldBumpPatch) {
         nextVersion = semver.inc(currentReleaseTag, 'patch');
       }
+      const shouldRelease = nextVersion !== currentReleaseTag;
 
-      console.log(`Next version determined to be: ${nextVersion}`);
+      core.info(`Next version determined to be: ${nextVersion}`);
+
       core.setOutput('next-version', nextVersion);
+      core.setOutput('should-release', shouldRelease);
+      core.setOutput('release-notes', '');
     } catch (error) {
       throw new Error(`Failed to analyze commits: ${error.message}`);
     }
