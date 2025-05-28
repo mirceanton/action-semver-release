@@ -20,6 +20,13 @@ async function getLatestReleaseData(octokit, owner, repo, defaultVersion) {
       currentReleaseTag: semver.clean(latestRelease.data.tag_name) || defaultVersion
     };
   } catch (error) {
+    if (error.message.includes('Not Found')) {
+      core.warning('No releases found, using default version');
+      return {
+        currentReleaseDate: new Date(),
+        currentReleaseTag: defaultVersion
+      };
+    }
     throw new Error(`Failed to get latest release: ${error.message}`);
   }
 }

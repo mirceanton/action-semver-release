@@ -50,6 +50,13 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
       });
     });
 
+    it('should return default version when no previous release exists', async () => {
+      mockOctokit.rest.repos.getLatestRelease.mockRejectedValue(new Error('Not Found'));
+
+      const result = await getLatestReleaseData(mockOctokit, 'owner', 'repo', '1.0.0');
+      expect(result.currentReleaseTag).toBe('1.0.0');
+    });
+
     it('should return default version when no created_at date exists', async () => {
       mockOctokit.rest.repos.getLatestRelease.mockResolvedValue({ data: {} });
 
@@ -73,10 +80,10 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
     });
 
     it('should throw descriptive error when API call fails', async () => {
-      mockOctokit.rest.repos.getLatestRelease.mockRejectedValue(new Error('Not Found'));
+      mockOctokit.rest.repos.getLatestRelease.mockRejectedValue(new Error('Unknown error'));
 
       await expect(getLatestReleaseData(mockOctokit, 'owner', 'repo', '0.0.0')).rejects.toThrow(
-        'Failed to get latest release: Not Found'
+        'Failed to get latest release: Unknown error'
       );
     });
   });
