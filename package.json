@@ -1,5 +1,5 @@
 {
-  "name": "action-semantic-release-helper",
+  "name": "action-semver-metadata",
   "version": "1.0.0",
   "description": "GitHub Action to assist with semantic release using conventional commits",
   "main": "dist/index.js",
