@@ -332,6 +332,19 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
       expect(result).toBe('3.2.1');
     });
 
+    it('should not major bump version for non-feat/fix commits', () => {
+      const commits = [
+        { type: 'docs', isBreaking: true, sha: 'abc123' },
+        { type: 'style', isBreaking: true, sha: 'def456' },
+        { type: 'refactor', isBreaking: true, sha: 'ghi789' },
+        { type: 'test', isBreaking: true, sha: 'jkl012' },
+        { type: 'chore', isBreaking: true, sha: 'mno345' }
+      ];
+
+      const result = calculateNextVersion(commits, '3.2.1');
+      expect(result).toBe('3.2.1');
+    });
+
     it('should prioritize breaking changes over features and fixes', () => {
       const commits = [
         { type: 'feat', isBreaking: false, sha: 'feature1' },
