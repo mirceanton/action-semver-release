@@ -74,12 +74,6 @@ async function getCommitsSinceDate(octokit, owner, repo, sinceDate) {
         isBreaking = true;
       }
 
-      // Make sure only fix or feat commits can be breaking
-      if (isBreaking && type !== 'fix' && type !== 'feat') {
-        core.warning(`"Breaking" change found in non-feat/fix commit: ${shortSha}`);
-        isBreaking = false; // Reset to false if not a feat or fix
-      }
-
       return {
         sha: shortSha,
         type: type,
@@ -104,7 +98,7 @@ function calculateNextVersion(parsedCommits, currentVersion) {
   let shouldBumpPatch = false;
 
   for (const commit of parsedCommits) {
-    if (commit.isBreaking) {
+    if (commit.isBreaking && (commit.type === 'feat' || commit.type === 'fix')) {
       shouldBumpMajor = true;
       core.info(`Breaking change found: ${commit.sha}`);
       continue;
