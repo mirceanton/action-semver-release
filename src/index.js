@@ -76,7 +76,7 @@ async function getCommitsSinceDate(octokit, owner, repo, sinceDate) {
 
       // Make sure only fix or feat commits can be breaking
       if (isBreaking && type !== 'fix' && type !== 'feat') {
-        core.info(`"Breaking" change found in non-feat/fix commit: ${shortSha}`);
+        core.warning(`"Breaking" change found in non-feat/fix commit: ${shortSha}`);
         isBreaking = false; // Reset to false if not a feat or fix
       }
 
