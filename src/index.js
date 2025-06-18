@@ -98,7 +98,7 @@ function calculateNextVersion(parsedCommits, currentVersion) {
   let shouldBumpPatch = false;
 
   for (const commit of parsedCommits) {
-    if (commit.isBreaking) {
+    if (commit.isBreaking && (commit.type === 'feat' || commit.type === 'fix')) {
       shouldBumpMajor = true;
       core.info(`Breaking change found: ${commit.sha}`);
       continue;
