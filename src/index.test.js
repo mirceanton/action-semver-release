@@ -115,6 +115,20 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
               message: 'perf(database): optimize query performance\n\nReduced query time by 40%',
               author: { name: 'Bob Wilson' }
             }
+          },
+          {
+            sha: 'abcd1234efgh5678ijkl9012mnop3456qrst7890',
+            commit: {
+              message: 'ci(github-actions)!: update some-action to v2',
+              author: { name: 'Bob Wilson' }
+            }
+          },
+          {
+            sha: 'abcd1234efgh5678ijkl9012mnop3456qrst7890',
+            commit: {
+              message: 'chore(npm)!: update some-package to v3',
+              author: { name: 'Bob Wilson' }
+            }
           }
         ]
       });
@@ -122,7 +136,7 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
 
       const result = await getCommitsSinceDate(mockOctokit, 'owner', 'repo', sinceDate);
 
-      expect(result).toHaveLength(4);
+      expect(result).toHaveLength(6);
 
       // Test feat commit with scope
       expect(result[0]).toMatchObject({
@@ -166,6 +180,26 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
         body: 'Reduced query time by 40%',
         isBreaking: false,
         author: 'Bob Wilson'
+      });
+
+      // Test ci commit with "!" notation -> NOT a breaking change
+      expect(result[4]).toMatchObject({
+        sha: 'abcd123',
+        type: 'ci',
+        scope: 'github-actions',
+        description: 'update some-action to v2',
+        body: '',
+        isBreaking: false
+      });
+
+      // Test chore commit with "!" notation -> NOT a breaking change
+      expect(result[5]).toMatchObject({
+        sha: 'abcd123',
+        type: 'chore',
+        scope: 'npm',
+        description: 'update some-package to v3',
+        body: '',
+        isBreaking: false
       });
     });
 
@@ -326,19 +360,6 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
         { type: 'refactor', isBreaking: false, sha: 'ghi789' },
         { type: 'test', isBreaking: false, sha: 'jkl012' },
         { type: 'chore', isBreaking: false, sha: 'mno345' }
-      ];
-
-      const result = calculateNextVersion(commits, '3.2.1');
-      expect(result).toBe('3.2.1');
-    });
-
-    it('should not major bump version for non-feat/fix commits', () => {
-      const commits = [
-        { type: 'docs', isBreaking: true, sha: 'abc123' },
-        { type: 'style', isBreaking: true, sha: 'def456' },
-        { type: 'refactor', isBreaking: true, sha: 'ghi789' },
-        { type: 'test', isBreaking: true, sha: 'jkl012' },
-        { type: 'chore', isBreaking: true, sha: 'mno345' }
       ];
 
       const result = calculateNextVersion(commits, '3.2.1');

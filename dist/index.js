@@ -32675,8 +32675,10 @@ async function getCommitsSinceDate(octokit, owner, repo, sinceDate) {
       if (match) {
         type = match[1]; // feat, fix, docs, etc.
         scope = match[3] || ''; // optional scope
-        isBreaking = !!match[4]; // ! indicates breaking change
         description = match[5]; // commit description
+
+        // breaking change if ! is present and type is feat or fix
+        isBreaking = !!match[4] && (type === 'feat' || type === 'fix');
       } else {
         type = 'other';
         scope = '';
@@ -32714,7 +32716,7 @@ function calculateNextVersion(parsedCommits, currentVersion) {
   let shouldBumpPatch = false;
 
   for (const commit of parsedCommits) {
-    if (commit.isBreaking && (commit.type === 'feat' || commit.type === 'fix')) {
+    if (commit.isBreaking) {
       shouldBumpMajor = true;
       core.info(`Breaking change found: ${commit.sha}`);
       continue;
