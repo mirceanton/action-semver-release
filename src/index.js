@@ -225,6 +225,8 @@ async function run() {
     const token = core.getInput('github-token', { required: true });
     const defaultVersion = core.getInput('default-version') || '0.0.0';
     const dryRun = core.getInput('dry-run') === 'true';
+    const isDraft = core.getInput('draft') === 'true';
+    const isPrerelease = core.getInput('prerelease') === 'true';
 
     // Create octokit client
     const octokit = github.getOctokit(token);
@@ -303,8 +305,8 @@ async function run() {
       tag_name: `v${nextVersion}`,
       name: `v${nextVersion}`,
       body: releaseNotes,
-      draft: false,
-      prerelease: false,
+      draft: isDraft,
+      prerelease: isPrerelease
     });
     core.info(`Release v${nextVersion} created successfully`);
   } catch (error) {
