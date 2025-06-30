@@ -32915,16 +32915,18 @@ async function run() {
       return;
     }
 
-    await octokit.rest.repos.createRelease({
+    await octokit.request('POST /repos/{owner}/{repo}/releases', {
       owner,
       repo,
       tag_name: `v${nextVersion}`,
       name: `v${nextVersion}`,
       body: releaseNotes,
       draft: isDraft,
-      prerelease: isPrerelease
+      prerelease: isPrerelease,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8'
+      }
     });
-    core.info(`Release v${nextVersion} created successfully`);
   } catch (error) {
     core.setFailed(`Action failed with error: ${error.message}`);
   }
