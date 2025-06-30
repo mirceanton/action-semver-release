@@ -46,18 +46,4 @@ jobs:
         uses: ./
         with:
           github-token: ${{ steps.app-token.outputs.token }}
-
-      - name: Create Release
-        if: |
-          steps.release-metadata.outputs.should-release == 'true' &&
-          (
-            (github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'false') ||
-            (github.event_name == 'push' && github.event.ref == 'refs/heads/main') ||
-            (github.event_name == 'schedule')
-          )
-        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
-        with:
-          name: 'v${{ steps.release-metadata.outputs.next-version }}'
-          tag_name: 'v${{ steps.release-metadata.outputs.next-version }}'
-          body: ${{ steps.release-metadata.outputs.release-notes }}
-          token: ${{ steps.app-token.outputs.token }}
+          dry-run: ${{ inputs.dry-run == 'true' || github.event_name == 'push' }}
