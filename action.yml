@@ -3,6 +3,10 @@ name: Semantic Release Helper
 description: GitHub Action to assist with semantic release using conventional commits
 
 inputs:
+  dry-run:
+    description: 'Run in dry-run mode (no actual release)'
+    required: false
+    default: 'false'
   github-token:
     description: 'GitHub token for API access'
     required: true
