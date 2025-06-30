@@ -224,6 +224,9 @@ async function run() {
   try {
     const token = core.getInput('github-token', { required: true });
     const defaultVersion = core.getInput('default-version') || '0.0.0';
+    const dryRun = core.getInput('dry-run') === 'true';
+    const isDraft = core.getInput('draft') === 'true';
+    const isPrerelease = core.getInput('prerelease') === 'true';
 
     // Create octokit client
     const octokit = github.getOctokit(token);
@@ -284,6 +287,28 @@ async function run() {
       .addHeading('Release Notes', 2)
       .addCodeBlock(releaseNotes, 'markdown')
       .write();
+
+    // Create a release if conditions are met
+    if (dryRun) {
+      core.info('Dry run mode enabled, skipping actual release creation');
+      return;
+    }
+
+    if (!shouldRelease) {
+      core.info('No new version to release, skipping release creation');
+      return;
+    }
+
+    await octokit.rest.repos.createRelease({
+      owner,
+      repo,
+      tag_name: `v${nextVersion}`,
+      name: `v${nextVersion}`,
+      body: releaseNotes,
+      draft: isDraft,
+      prerelease: isPrerelease
+    });
+    core.info(`Release v${nextVersion} created successfully`);
   } catch (error) {
     core.setFailed(`Action failed with error: ${error.message}`);
   }

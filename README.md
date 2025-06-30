@@ -1,4 +1,4 @@
-# Semantic Release Metadata Action
+# Semantic Release Action
 
 Automatically determine the next semantic version and generate release notes based on
 [Conventional Commits](https://www.conventionalcommits.org/).
@@ -31,24 +31,20 @@ jobs:
 
       - name: Generate Release Metadata
         id: release-metadata
-        uses: mirceanton/action-semver-metadata@v1
+        uses: mirceanton/action-semver-release@v2
         with:
           github-token: ${{ github.token }}
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: 'v${{ steps.release-metadata.outputs.next-version }}'
-          tag_name: 'v${{ steps.release-metadata.outputs.next-version }}'
-          body: ${{ steps.release-metadata.outputs.release-notes }}
 ```
 
 ## Inputs
 
-| Input             | Description                            | Required | Default               |
-| ----------------- | -------------------------------------- | -------- | --------------------- |
-| `github-token`    | GitHub token for API access            | Yes      | `${{ github.token }}` |
-| `default-version` | Default version when no releases exist | No       | `0.0.0`               |
+| Input             | Description                             | Required | Default               |
+| ----------------- | --------------------------------------- | -------- | --------------------- |
+| `github-token`    | GitHub token for API access             | Yes      | `${{ github.token }}` |
+| `default-version` | Default version when no releases exist  | No       | `0.0.0`               |
+| `dry-run`         | Run in dry-run mode (no actual release) | No       | `false`               |
+| `draft`           | Mark the release as a draft             | No       | `false`               |
+| `prerelease`      | Mark the release as a pre-release       | No       | `false`               |
 
 ## Outputs
 
