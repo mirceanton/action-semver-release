@@ -1,4 +1,3 @@
-import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,7 +17,9 @@ const compat = new FlatCompat({
 });
 
 export default [
-  globalIgnores(['**/node_modules/', '**/dist/', '**/coverage/', '**/*.min.js']),
+  {
+    ignores: ['**/node_modules/', '**/dist/', '**/coverage/', '**/*.min.js']
+  },
 
   ...compat.extends('eslint:recommended', 'plugin:jest/recommended', 'plugin:prettier/recommended'),
 
