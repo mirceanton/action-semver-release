@@ -210,22 +210,22 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
             message: 'Update README with new installation instructions',
             author: { name: 'Test User' }
           }
-          },
-          {
-            sha: '2222333344445555666677778888999900001111',
-            commit: {
-              message: '',
-              author: { name: 'Empty Commit' }
-            }
-          },
-          {
-            sha: '3333444455556666777788889999000011112222',
-            commit: {
-              message: 'fix(api) missing colon after type',
-              author: { name: 'Malformed User' }
-            }
+        },
+        {
+          sha: '2222333344445555666677778888999900001111',
+          commit: {
+            message: '',
+            author: { name: 'Empty Commit' }
           }
-        ]);
+        },
+        {
+          sha: '3333444455556666777788889999000011112222',
+          commit: {
+            message: 'fix(api) missing colon after type',
+            author: { name: 'Malformed User' }
+          }
+        }
+      ]);
 
       const result = await getCommitsSinceDate(mockOctokit, 'owner', 'repo', new Date());
       expect(result).toHaveLength(3);
