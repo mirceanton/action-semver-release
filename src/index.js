@@ -35,10 +35,11 @@ async function getLatestReleaseData(octokit, owner, repo, defaultVersion) {
 
 async function getCommitsSinceDate(octokit, owner, repo, sinceDate) {
   try {
-    const { data: commits } = await octokit.rest.repos.listCommits({
+    const commits = await octokit.paginate(octokit.rest.repos.listCommits, {
       owner,
       repo,
-      since: sinceDate.toISOString()
+      since: sinceDate.toISOString(),
+      per_page: 100
     });
 
     const parsedCommits = commits.map((commit) => {

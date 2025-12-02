@@ -15,7 +15,8 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
           getLatestRelease: jest.fn(),
           listCommits: jest.fn()
         }
-      }
+      },
+      paginate: jest.fn()
     };
   });
 
@@ -86,52 +87,50 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
 
   describe('getCommitsSinceDate', () => {
     it('should parse conventional commits with all variations', async () => {
-      mockOctokit.rest.repos.listCommits.mockResolvedValue({
-        data: [
-          {
-            sha: '1234567890abcdef1234567890abcdef12345678',
-            commit: {
-              message: 'feat(auth): add OAuth 2.0 support\n\nImplemented full OAuth 2.0 flow with refresh tokens',
-              author: { name: 'John Doe' }
-            }
-          },
-          {
-            sha: 'abcdef1234567890abcdef1234567890abcdef12',
-            commit: {
-              message: 'fix: resolve memory leak in worker threads\n\nBREAKING CHANGE: Worker API has been redesigned',
-              author: { name: 'Jane Smith' }
-            }
-          },
-          {
-            sha: 'fedcba0987654321fedcba0987654321fedcba09',
-            commit: {
-              message: 'feat!: redesign user authentication system',
-              author: { name: 'Alice Brown' }
-            }
-          },
-          {
-            sha: 'abcd1234efgh5678ijkl9012mnop3456qrst7890',
-            commit: {
-              message: 'perf(database): optimize query performance\n\nReduced query time by 40%',
-              author: { name: 'Bob Wilson' }
-            }
-          },
-          {
-            sha: 'abcd1234efgh5678ijkl9012mnop3456qrst7890',
-            commit: {
-              message: 'ci(github-actions)!: update some-action to v2',
-              author: { name: 'Bob Wilson' }
-            }
-          },
-          {
-            sha: 'abcd1234efgh5678ijkl9012mnop3456qrst7890',
-            commit: {
-              message: 'chore(npm)!: update some-package to v3',
-              author: { name: 'Bob Wilson' }
-            }
+      mockOctokit.paginate.mockResolvedValue([
+        {
+          sha: '1234567890abcdef1234567890abcdef12345678',
+          commit: {
+            message: 'feat(auth): add OAuth 2.0 support\n\nImplemented full OAuth 2.0 flow with refresh tokens',
+            author: { name: 'John Doe' }
           }
-        ]
-      });
+        },
+        {
+          sha: 'abcdef1234567890abcdef1234567890abcdef12',
+          commit: {
+            message: 'fix: resolve memory leak in worker threads\n\nBREAKING CHANGE: Worker API has been redesigned',
+            author: { name: 'Jane Smith' }
+          }
+        },
+        {
+          sha: 'fedcba0987654321fedcba0987654321fedcba09',
+          commit: {
+            message: 'feat!: redesign user authentication system',
+            author: { name: 'Alice Brown' }
+          }
+        },
+        {
+          sha: 'abcd1234efgh5678ijkl9012mnop3456qrst7890',
+          commit: {
+            message: 'perf(database): optimize query performance\n\nReduced query time by 40%',
+            author: { name: 'Bob Wilson' }
+          }
+        },
+        {
+          sha: 'abcd1234efgh5678ijkl9012mnop3456qrst7890',
+          commit: {
+            message: 'ci(github-actions)!: update some-action to v2',
+            author: { name: 'Bob Wilson' }
+          }
+        },
+        {
+          sha: 'abcd1234efgh5678ijkl9012mnop3456qrst7890',
+          commit: {
+            message: 'chore(npm)!: update some-package to v3',
+            author: { name: 'Bob Wilson' }
+          }
+        }
+      ]);
       const sinceDate = new Date('2024-01-01T00:00:00Z');
 
       const result = await getCommitsSinceDate(mockOctokit, 'owner', 'repo', sinceDate);
@@ -204,31 +203,29 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
     });
 
     it('should handle non-conventional commit formats', async () => {
-      mockOctokit.rest.repos.listCommits.mockResolvedValue({
-        data: [
-          {
-            sha: '1111222233334444555566667777888899990000',
-            commit: {
-              message: 'Update README with new installation instructions',
-              author: { name: 'Test User' }
-            }
-          },
-          {
-            sha: '2222333344445555666677778888999900001111',
-            commit: {
-              message: '',
-              author: { name: 'Empty Commit' }
-            }
-          },
-          {
-            sha: '3333444455556666777788889999000011112222',
-            commit: {
-              message: 'fix(api) missing colon after type',
-              author: { name: 'Malformed User' }
-            }
+      mockOctokit.paginate.mockResolvedValue([
+        {
+          sha: '1111222233334444555566667777888899990000',
+          commit: {
+            message: 'Update README with new installation instructions',
+            author: { name: 'Test User' }
           }
-        ]
-      });
+        },
+        {
+          sha: '2222333344445555666677778888999900001111',
+          commit: {
+            message: '',
+            author: { name: 'Empty Commit' }
+          }
+        },
+        {
+          sha: '3333444455556666777788889999000011112222',
+          commit: {
+            message: 'fix(api) missing colon after type',
+            author: { name: 'Malformed User' }
+          }
+        }
+      ]);
 
       const result = await getCommitsSinceDate(mockOctokit, 'owner', 'repo', new Date());
       expect(result).toHaveLength(3);
@@ -265,18 +262,16 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
     });
 
     it('should handle complex scopes and multiline bodies', async () => {
-      mockOctokit.rest.repos.listCommits.mockResolvedValue({
-        data: [
-          {
-            sha: 'aaaa1111bbbb2222cccc3333dddd4444eeee5555',
-            commit: {
-              message:
-                'feat(api/v2/auth/oauth): add complex nested scope\n\nLine 1 of body\nLine 2 of body\n\nBREAKING CHANGE: This breaks things\nMore breaking info',
-              author: { name: 'Complex User' }
-            }
+      mockOctokit.paginate.mockResolvedValue([
+        {
+          sha: 'aaaa1111bbbb2222cccc3333dddd4444eeee5555',
+          commit: {
+            message:
+              'feat(api/v2/auth/oauth): add complex nested scope\n\nLine 1 of body\nLine 2 of body\n\nBREAKING CHANGE: This breaks things\nMore breaking info',
+            author: { name: 'Complex User' }
           }
-        ]
-      });
+        }
+      ]);
 
       const result = await getCommitsSinceDate(mockOctokit, 'owner', 'repo', new Date());
       expect(result).toHaveLength(1);
@@ -292,20 +287,21 @@ describe('GitHub Action - Semantic Version Release Functions', () => {
     });
 
     it('should call GitHub API with correct parameters', async () => {
-      mockOctokit.rest.repos.listCommits.mockResolvedValue({ data: [] });
+      mockOctokit.paginate.mockResolvedValue([]);
       const sinceDate = new Date('2024-03-15T14:30:45.123Z');
 
       await getCommitsSinceDate(mockOctokit, 'test-owner', 'test-repo', sinceDate);
 
-      expect(mockOctokit.rest.repos.listCommits).toHaveBeenCalledWith({
+      expect(mockOctokit.paginate).toHaveBeenCalledWith(mockOctokit.rest.repos.listCommits, {
         owner: 'test-owner',
         repo: 'test-repo',
-        since: '2024-03-15T14:30:45.123Z'
+        since: '2024-03-15T14:30:45.123Z',
+        per_page: 100
       });
     });
 
     it('should throw descriptive error when API call fails', async () => {
-      mockOctokit.rest.repos.listCommits.mockRejectedValue(new Error('Rate limit exceeded'));
+      mockOctokit.paginate.mockRejectedValue(new Error('Rate limit exceeded'));
 
       await expect(getCommitsSinceDate(mockOctokit, 'owner', 'repo', new Date())).rejects.toThrow(
         'Failed to get commits: Rate limit exceeded'
