@@ -13,7 +13,6 @@ on:
         default: false
         type: boolean
   push:
-    branches: ['*']
     paths:
       - .github/workflows/release.yaml
       - action.yml
