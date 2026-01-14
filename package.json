@@ -20,20 +20,20 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@actions/core": "^2.0.0",
-    "@actions/github": "^7.0.0"
+    "@actions/core": "2.0.0",
+    "@actions/github": "7.0.0"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.0.0",
-    "@vercel/ncc": "^0.38.3",
+    "@eslint/compat": "2.0.0",
+    "@vercel/ncc": "0.38.3",
     "eslint": "9.39.2",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-jest": "29.12.1",
     "eslint-plugin-prettier": "5.5.4",
-    "globals": "^17.0.0",
-    "jest": "^30.0.0",
-    "mock-fs": "^5.5.0",
+    "globals": "17.0.0",
+    "jest": "30.0.0",
+    "mock-fs": "5.5.0",
     "prettier": "3.7.4"
   }
 }
