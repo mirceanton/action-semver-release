@@ -1,6 +1,6 @@
-const core = require('@actions/core');
-const github = require('@actions/github');
-const semver = require('semver');
+import * as core from '@actions/core';
+import * as github from '@actions/github';
+import semver from 'semver';
 
 async function getLatestReleaseData(octokit, owner, repo, defaultVersion) {
   try {
@@ -317,8 +317,10 @@ async function run() {
   }
 }
 
-if (require.main === module) {
+import { fileURLToPath } from 'url';
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   run();
 }
 
-module.exports = { run, getLatestReleaseData, getCommitsSinceDate, calculateNextVersion, generateReleaseNotes };
+export { run, getLatestReleaseData, getCommitsSinceDate, calculateNextVersion, generateReleaseNotes };

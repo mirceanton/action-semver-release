@@ -1,8 +1,25 @@
-const core = require('@actions/core');
-const semver = require('semver');
-const { getLatestReleaseData, getCommitsSinceDate, calculateNextVersion, generateReleaseNotes } = require('./index.js');
+import { jest } from '@jest/globals';
 
-jest.mock('@actions/core');
+jest.unstable_mockModule('@actions/core', () => ({
+  debug: jest.fn(),
+  info: jest.fn(),
+  warning: jest.fn(),
+  setFailed: jest.fn(),
+  getInput: jest.fn(),
+  setOutput: jest.fn(),
+  summary: {
+    addHeading: jest.fn().mockReturnThis(),
+    addTable: jest.fn().mockReturnThis(),
+    addRaw: jest.fn().mockReturnThis(),
+    addCodeBlock: jest.fn().mockReturnThis(),
+    write: jest.fn().mockResolvedValue(undefined)
+  }
+}));
+
+const core = await import('@actions/core');
+const semver = await import('semver');
+const { getLatestReleaseData, getCommitsSinceDate, calculateNextVersion, generateReleaseNotes } =
+  await import('./index.js');
 
 describe('GitHub Action - Semantic Version Release Functions', () => {
   let mockOctokit;
