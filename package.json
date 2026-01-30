@@ -2,6 +2,7 @@
   "name": "action-semver-metadata",
   "version": "1.0.0",
   "description": "GitHub Action to assist with semantic release using conventional commits",
+  "type": "module",
   "main": "dist/index.js",
   "author": "mirceanton",
   "license": "MIT",
@@ -13,7 +14,7 @@
   ],
   "scripts": {
     "build": "ncc build src/index.js -o dist",
-    "test": "jest",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "format": "prettier --write .",
