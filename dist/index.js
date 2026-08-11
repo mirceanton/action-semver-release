@@ -38934,7 +38934,7 @@ async function getLatestReleaseData(octokit, owner, repo, defaultVersion) {
         currentReleaseTag: defaultVersion
       };
     }
-    throw new Error(`Failed to get latest release: ${error.message}`);
+    throw new Error(`Failed to get latest release: ${error.message}`, { cause: error });
   }
 }
 
@@ -38996,7 +38996,7 @@ async function getCommitsSinceDate(octokit, owner, repo, sinceDate) {
 
     return parsedCommits;
   } catch (error) {
-    throw new Error(`Failed to get commits: ${error.message}`);
+    throw new Error(`Failed to get commits: ${error.message}`, { cause: error });
   }
 }
 
